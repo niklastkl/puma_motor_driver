@@ -334,6 +334,13 @@ public:
    */
   double statusPositionGet();
 
+  bool updatedPosition();
+
+  bool updatedSpeed();
+
+  bool updatedCurrent();
+
+  void resetUpdatedStates();
 
 
   std::string deviceName() const { return device_name_; }
@@ -373,6 +380,10 @@ private:
   uint16_t encoder_cpr_;
   float gear_ratio_;
 
+  bool updated_pos_{false};
+  bool updated_spd_{false};
+  bool updated_curr_{false};
+  
   /**
    * Helpers to generate data for CAN messages.
    */

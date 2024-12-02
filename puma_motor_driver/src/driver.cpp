@@ -104,6 +104,17 @@ void Driver::processMessage(const Message& received_msg)
   // Copy the received data and mark that field as received.
   std::memcpy(field->data, received_msg.data, received_msg.len);
   field->received = true;
+
+
+  if (statusFieldForMessage(Message(LM_API_STATUS_POS)) == field) {
+    updated_pos_ = true;
+  } 
+  if (statusFieldForMessage(Message(LM_API_STATUS_SPD)) == field) {
+    updated_spd_ = true; 
+  } 
+  if (statusFieldForMessage(Message(LM_API_STATUS_CURRENT)) == field) {
+    updated_curr_ = true; 
+  } 
 }
 
 double Driver::radPerSecToRpm() const
@@ -703,6 +714,24 @@ double Driver::statusPositionGet()
 {
   Field* field = posFieldForMessage(Message(LM_API_POS_SET));
   return (field->interpretFixed16x16() * (( 2 * M_PI) / gear_ratio_));  // Convert rev to rad
+}
+
+bool Driver::updatedPosition(){
+  return updated_pos_;
+}
+
+bool Driver::updatedSpeed(){
+  return updated_spd_;
+}
+
+bool Driver::updatedCurrent(){
+  return updated_curr_;
+}
+
+void Driver::resetUpdatedStates(){
+  updated_pos_ = false;
+  updated_spd_ = false;
+  updated_curr_ = false;
 }
 
 uint8_t Driver::posEncoderRef()
