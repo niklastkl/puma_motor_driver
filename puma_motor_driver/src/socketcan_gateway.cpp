@@ -33,25 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace puma_motor_driver {
 
-bool printMsgIfRelevant(Message *msg, int device_number, bool relevant) {
-  relevant &= (msg->getApi() & CAN_MSGID_API_M & CAN_API_MC_STATUS) ==
-              CAN_API_MC_STATUS; // test if status message
-  auto get_field_idx = [](const Message &msg) {
-    return ((msg.getApi() & CAN_MSGID_API_ID_M) >> CAN_MSGID_API_S);
-  };
-  relevant &= get_field_idx(*msg) == get_field_idx(Message(LM_API_STATUS_SPD));
-  relevant &= msg->getDeviceNumber() == device_number;
-  if (relevant) {
-    std::string out_string;
-    for (int i = 0; i < int(msg->len); i++) {
-      out_string += std::to_string(msg->data[i]);
-    }
-    std::cout << "Message data: " << std::endl;
-    std::cout << out_string << std::endl;
-  }
-  return relevant;
-}
-
 SocketCANGateway::SocketCANGateway(const std::string& canbus_dev):
   canbus_dev_(canbus_dev),
   is_connected_(false),
@@ -104,15 +85,6 @@ bool SocketCANGateway::recv(Message* msg)
     return false;
   }
   this->canFrameToMsg(&can_receive_queue_.front(), msg);
-  bool relevant = printMsgIfRelevant(msg, 5, true);
-  if (relevant){
-    const double tmp_diff = double(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - last_time).count() * 1e-9);
-    average_diff = (tmp_diff + counter * average_diff) / (counter + 1);
-    std::cout << "Average time diff: " << average_diff << std::endl;
-    counter += 1;
-    last_time = std::chrono::high_resolution_clock::now();
-    std::cout << "From recv()" << std::endl;
-  }
   can_receive_queue_.pop();
   return true;
 }
@@ -148,11 +120,6 @@ void SocketCANGateway::msgCallback(const can::Frame& msg)
   std::lock_guard<std::mutex> lock(receive_queue_mutex_);
   can_receive_queue_.push(msg);
   Message readable_msg;
-  canFrameToMsg(&msg, &readable_msg);
-  bool relevant = printMsgIfRelevant(&readable_msg, 5, true);
-  if (relevant){
-    std::cout << "From msgCallback()" << std::endl;
-  }
 }
 
 void SocketCANGateway::stateCallback(const can::State& state)
